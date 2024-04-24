@@ -25,7 +25,7 @@ st.session_state.models_not_selected = models_not_selected if \
 
 col1, col2 = st.columns(2)
 
-def form_callback(api_key=api_key):
+def form_callback(api_key=st.session_state.api_key):
     global unify_model1, unify_model2
 
     st.write(st.session_state.model1_selectbox, st.session_state.model2_selectbox)
