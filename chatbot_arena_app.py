@@ -2,16 +2,34 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import os
+import time
 from unify import Unify
 
 api_key = "TAw34N+waKrjQ053e+3vSsdjNJVC+MyHs5CF3NdBufQ="
 
+unify_model1 = None
+unify_model2 = None
+response1 = None
+response2 = None
+models_not_selected = True
 
+keys = ["model1_selectbox", "model2_selectbox", "response1", "response2", "user_prompt", "models_not_selected"]
+
+for key in keys:
+    if key not in st.session_state.keys():
+        st.session_state[key] = None
+
+st.session_state.models_not_selected = models_not_selected if \
+    st.session_state.models_not_selected is None \
+    else st.session_state.models_not_selected
+
+col1, col2 = st.columns(2)
 
 def form_callback():
     global unify_model1, unify_model2
-    st.session_state['model1_selectbox'] = ''
-    st.session_state['model2_selectbox'] = ''
+
+    st.write(st.session_state.model1_selectbox, st.session_state.model2_selectbox)
+
     unify_model1 = Unify(
         api_key=api_key,
         endpoint=st.session_state.model1_selectbox,
@@ -20,16 +38,23 @@ def form_callback():
     unify_model2 = Unify(
         api_key=api_key,
         endpoint=st.session_state.model2_selectbox,
-        )   
-    user_prompt = st.text_input('User prompt', '')
-    st.session_state['user_prompt'] = user_prompt
+        )
+    st.session_state.models_not_selected = False
 
 def prompt_callback():
-    global response1, response2 
-    response1 = unify_model1.generate(user_prompt=st.session_state['user_prompt'])
-    response2 = unify_model2.generate(user_prompt=st.session_state['user_prompt'])
+    global response1, response2
+    col1, col2 = st.columns(2)
+    st.write(st.session_state['user_prompt'])
+    # response1 = unify_model1.generate(user_prompt=st.session_state['user_prompt'])
+    # response2 = unify_model2.generate(user_prompt=st.session_state['user_prompt'])
+    response1 = "response1"
+    response2 = "response2"
 
-col1, col2 = st.columns(2)
+    with col1:
+        st.text_area(f'{response1}', key="response1_out")
+
+    with col2:
+        st.text_area(f'{response2}', key="response2_out")
 
 with st.form(key='my_form'):
     with col1:
@@ -46,6 +71,7 @@ with st.form(key='my_form'):
                                          'llama-2-70b-chat@fireworks-ai',
                                          'llama-2-13b-chat@fireworks-ai',
                                          'gpt-4-turbo@openai'),
+                                        placeholder='mixtral-8x7b-instruct-v0.1@fireworks-ai',
                                         key="model1_selectbox")
     with col2:
         model2_selectbox = st.selectbox('Select the second LLM model:',
@@ -61,5 +87,22 @@ with st.form(key='my_form'):
                                          'llama-2-70b-chat@fireworks-ai',
                                          'llama-2-13b-chat@fireworks-ai',
                                          'gpt-4-turbo@openai'),
-                                        key="model2_slectbox")
-    submit_button = st.form_submit_button(label='Submit', on_click=form_callback)
+                                        placeholder='mixtral-8x7b-instruct-v0.1@fireworks-ai',
+                                        key="model2_selectbox")
+    submit_button = st.form_submit_button(label='Initialize',
+                                          on_click=form_callback)
+
+@st.experimental_fragment
+def get_user_prompt(disabled=st.session_state.models_not_selected):
+    st.session_state['user_prompt'] = st.text_input('User prompt', f'{input}',
+                                                    disabled=disabled,
+                                                    on_change=get_response)
+    if disabled:
+        time.sleep(1)
+        st.rerun()
+
+@st.experimental_fragment
+def get_response():
+    st.write(st.session_state.user_prompt)
+
+get_user_prompt(st.session_state.models_not_selected)
