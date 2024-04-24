@@ -10,12 +10,13 @@ models_not_selected = True
 keys = ["model1_selectbox", "model2_selectbox", "response1",
         "response2", "user_prompt", "models_not_selected",
         "response_allowed", "api_key",
-        "unify_model1", "unify_model2"]
+        "unify_model1", "unify_model2", "scores"]
 
 for key in keys:
     if key not in st.session_state.keys():
         st.session_state[key] = None
 
+st.session_state.scores = dict()
 st.session_state.models_not_selected = models_not_selected if \
     st.session_state.models_not_selected is None \
     else st.session_state.models_not_selected
