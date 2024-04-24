@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-import os
+import os.path
 import time
 import json
 from unify import Unify
@@ -20,6 +20,14 @@ for key in keys:
         st.session_state[key] = None
 
 st.session_state.scores = OrderedDict()
+
+path = './scores.json'
+scores_exist = os.path.exists(path)
+if not scores_exist:
+    with open("scores.json", "w") as outfile:
+        scores = {}
+        json.dump(scores, outfile)
+
 
 with open("scores.json", "r") as infile:
     if infile:
