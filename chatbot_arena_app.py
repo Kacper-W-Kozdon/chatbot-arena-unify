@@ -94,7 +94,6 @@ with st.form(key='my_form'):
 
 @st.experimental_fragment
 def get_user_prompt(disabled=st.session_state.models_not_selected):
-    prev_response = st.session_state['user_prompt']
     st.session_state['user_prompt'] = st.text_input('User prompt', '',
                                                     disabled=disabled,
                                                     on_change=lambda: st.session_state.__setattr__("response_allowed", True))
