@@ -57,7 +57,7 @@ def prompt_callback():
         st.text_area(f'{response2}', key="response2_out")
 
 with st.sidebar:
-    st.session_state.api_key = st.text_input("Unify API key", type="default")
+    st.session_state.api_key = st.text_input("Unify API key", type="password")
 
 @st.experimental_fragment
 def set_models(api_key=st.session_state.api_key):
@@ -98,7 +98,7 @@ def set_models(api_key=st.session_state.api_key):
                                             disabled=disabled,
                                             key="model2_selectbox")
         submit_button = st.form_submit_button(label='Initialize', disabled=disabled,
-                                            on_click=form_callback, api_key=st.session_state.api_key)
+                                            on_click=lambda: form_callback(st.session_state.api_key))
         if not disabled:
             st.rerun()
 
