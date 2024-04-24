@@ -3,21 +3,29 @@ import numpy as np
 import pandas as pd
 import os
 import time
+import json
 from unify import Unify
+from collections import OrderedDict
 
 models_not_selected = True
 
 keys = ["model1_selectbox", "model2_selectbox", "model1_other",
         "model2_other", "response1", "winner_picked",
         "response2", "user_prompt", "models_not_selected",
-        "response_allowed", "api_key",
+        "response_allowed", "api_key", "summary",
         "unify_model1", "unify_model2", "scores"]
 
 for key in keys:
     if key not in st.session_state.keys():
         st.session_state[key] = None
 
-st.session_state.scores = dict()
+st.session_state.scores = OrderedDict()
+
+with open("scores.json", "r") as infile:
+    if infile:
+        st.session_state.scores = json.load(infile)
+
+
 st.session_state.models_not_selected = models_not_selected if \
     st.session_state.models_not_selected is None \
     else st.session_state.models_not_selected
@@ -43,6 +51,8 @@ def form_callback(api_key=st.session_state.api_key):
 
 def prompt_callback(response_allowed=st.session_state.response_allowed):
     global response1, response2
+    winner = None
+    loser = None
     winner_picked = False if st.session_state.winner_picked is None else st.session_state.winner_picked
     unify_model1 = st.session_state.unify_model1 
     unify_model2 = st.session_state.unify_model2
@@ -57,14 +67,23 @@ def prompt_callback(response_allowed=st.session_state.response_allowed):
     with col1:
         st.text_area(f'{model1}', f'{response1}', disabled=True, key="response1_out")
         if response_allowed:
-            st.button("Winner!", disabled=winner_picked,
-                      on_click=lambda: st.session_state.__setattr__("winner_picked", True), key="winner1")
+            if st.button("Winner!", disabled=winner_picked,
+                         on_click=lambda: (st.session_state.__setattr__("winner_picked", True)), key="winner1"):
+                winner = model1
+                loser = model2
 
     with col2:
         st.text_area(f'{model2}', f'{response2}', disabled=True, key="response2_out")
         if response_allowed:
-            st.button("Winner!", disabled=winner_picked,
-                      on_click=lambda: st.session_state.__setattr__("winner_picked", True), key="winner2")
+            if st.button("Winner!", disabled=winner_picked,
+                         on_click=lambda: (st.session_state.__setattr__("winner_picked", True)), key="winner2"):
+                winner = model2
+                loser = model1
+
+    if st.session_state.winner_picked is True:
+        update_winners(winner, loser)
+        winner = None
+        loser = None
 
 with st.sidebar:
     st.session_state.api_key = st.text_input("Unify API key", type="password")
@@ -131,7 +150,28 @@ def get_user_prompt(disabled=st.session_state.models_not_selected):
     if st.session_state.user_prompt == '':
         st.session_state.response_allowed = False
 
+def update_winners(winner=None, loser=None):
+    if winner and loser:
+        if winner not in st.session_state.scores.keys():
+            st.session_state.scores[f'{winner}'] = {'wins': 0, 'losses': 0}    
+        if loser not in st.session_state.scores.keys():
+            st.session_state.scores[f'{loser}'] = {'wins': 0, 'losses': 0}
+
+        st.session_state.scores[f'{winner}']['wins'] += 1
+        if loser != winner:
+            st.session_state.scores[f'{loser}']['losses'] += 1
+
+        with open("scores.json", "w") as outfile:
+            json.dump(st.session_state.scores, outfile)
+
+def display_scores():
+    scores_text = ''
+    for key in st.session_state.scores.keys():
+        scores_text += f'{key}: {st.session_state.scores[key]}'
+        scores_text += '\n'
+    st.text_area("Scores:", scores_text, disabled=True)
 
 set_models(st.session_state.api_key)
 get_user_prompt(st.session_state.models_not_selected)
 prompt_callback(st.session_state.response_allowed)
+display_scores()
