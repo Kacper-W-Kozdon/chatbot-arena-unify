@@ -8,7 +8,7 @@ from unify import Unify
 models_not_selected = True
 
 keys = ["model1_selectbox", "model2_selectbox", "model1_other",
-        "model2_other", "response1",
+        "model2_other", "response1", "winner_picked",
         "response2", "user_prompt", "models_not_selected",
         "response_allowed", "api_key",
         "unify_model1", "unify_model2", "scores"]
@@ -43,6 +43,7 @@ def form_callback(api_key=st.session_state.api_key):
 
 def prompt_callback(response_allowed=st.session_state.response_allowed):
     global response1, response2
+    winner_picked = False if st.session_state.winner_picked is None else st.session_state.winner_picked
     unify_model1 = st.session_state.unify_model1 
     unify_model2 = st.session_state.unify_model2
     col1, col2 = st.columns(2)
@@ -55,9 +56,15 @@ def prompt_callback(response_allowed=st.session_state.response_allowed):
 
     with col1:
         st.text_area(f'{model1}', f'{response1}', disabled=True, key="response1_out")
+        if response_allowed:
+            st.button("Winner!", disabled=winner_picked,
+                      on_click=lambda: st.session_state.__setattr__("winner_picked", True), key="winner1")
 
     with col2:
         st.text_area(f'{model2}', f'{response2}', disabled=True, key="response2_out")
+        if response_allowed:
+            st.button("Winner!", disabled=winner_picked,
+                      on_click=lambda: st.session_state.__setattr__("winner_picked", True), key="winner2")
 
 with st.sidebar:
     st.session_state.api_key = st.text_input("Unify API key", type="password")
@@ -116,9 +123,13 @@ def set_models(api_key=st.session_state.api_key):
                                             on_click=lambda: form_callback(api_key))
 
 def get_user_prompt(disabled=st.session_state.models_not_selected):
-    st.session_state.user_prompt = st.text_input('User prompt', '', placeholder="Hello, introduce yourself.",
+    st.session_state.user_prompt = st.text_input('User prompt', placeholder="Hello there!",
                                                     disabled=disabled,
-                                                    on_change=lambda: st.session_state.__setattr__("response_allowed", True))
+                                                    on_change=lambda: (st.session_state.__setattr__("response_allowed", True),
+                                                                       st.session_state.__setattr__("winner_picked", False)))
+    
+    if st.session_state.user_prompt == '':
+        st.session_state.response_allowed = False
 
 
 set_models(st.session_state.api_key)
