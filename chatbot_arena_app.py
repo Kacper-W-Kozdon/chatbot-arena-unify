@@ -5,8 +5,6 @@ import os
 import time
 from unify import Unify
 
-# api_key = "TAw34N+waKrjQ053e+3vSsdjNJVC+MyHs5CF3NdBufQ="
-
 models_not_selected = True
 
 keys = ["model1_selectbox", "model2_selectbox", "response1",
