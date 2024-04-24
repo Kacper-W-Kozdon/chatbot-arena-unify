@@ -13,7 +13,7 @@ response1 = None
 response2 = None
 models_not_selected = True
 
-keys = ["model1_selectbox", "model2_selectbox", "response1", "response2", "user_prompt", "models_not_selected"]
+keys = ["model1_selectbox", "model2_selectbox", "response1", "response2", "user_prompt", "models_not_selected", "response_allowed"]
 
 for key in keys:
     if key not in st.session_state.keys():
@@ -94,12 +94,15 @@ with st.form(key='my_form'):
 
 @st.experimental_fragment
 def get_user_prompt(disabled=st.session_state.models_not_selected):
-    st.session_state['user_prompt'] = st.text_input('User prompt', f'{input}',
+    prev_response = st.session_state['user_prompt']
+    st.session_state['user_prompt'] = st.text_input('User prompt', '',
                                                     disabled=disabled,
-                                                    on_change=get_response)
+                                                    on_change=lambda: st.session_state.__setattr__("response_allowed", True))
     if disabled:
         time.sleep(1)
         st.rerun()
+    if st.session_state.response_allowed:
+        get_response()
 
 @st.experimental_fragment
 def get_response():
