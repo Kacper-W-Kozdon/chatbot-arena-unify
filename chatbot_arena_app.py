@@ -7,7 +7,8 @@ from unify import Unify
 
 models_not_selected = True
 
-keys = ["model1_selectbox", "model2_selectbox", "response1",
+keys = ["model1_selectbox", "model2_selectbox", "model1_other",
+        "model2_other", "response1",
         "response2", "user_prompt", "models_not_selected",
         "response_allowed", "api_key",
         "unify_model1", "unify_model2", "scores"]
@@ -24,26 +25,33 @@ st.session_state.models_not_selected = models_not_selected if \
 col1, col2 = st.columns(2)
 
 def form_callback(api_key=st.session_state.api_key):
+    endpoint1 = st.session_state.model1_selectbox if st.session_state.model1_selectbox != 'other' \
+        else st.session_state.model1_other
+    endpoint2 = st.session_state.model2_selectbox if st.session_state.model2_selectbox != 'other' \
+        else st.session_state.model2_other
+
     st.session_state.unify_model1 = Unify(
         api_key=api_key,
-        endpoint=st.session_state.model1_selectbox,
+        endpoint=endpoint1,
         )
 
     st.session_state.unify_model2 = Unify(
         api_key=api_key,
-        endpoint=st.session_state.model2_selectbox,
+        endpoint=endpoint2,
         )
     st.session_state.models_not_selected = False
 
 def prompt_callback(response_allowed=st.session_state.response_allowed):
     global response1, response2
-    unify_model1 = st.session_state.unify_model1
+    unify_model1 = st.session_state.unify_model1 
     unify_model2 = st.session_state.unify_model2
     col1, col2 = st.columns(2)
     response1 = '' if not response_allowed else unify_model1.generate(user_prompt=st.session_state['user_prompt'])
     response2 = '' if not response_allowed else unify_model2.generate(user_prompt=st.session_state['user_prompt'])
-    model1 = st.session_state.model1_selectbox
-    model2 = st.session_state.model2_selectbox
+    model1 = st.session_state.model1_selectbox if st.session_state.model1_selectbox != 'other' \
+        else st.session_state.model1_other
+    model2 = st.session_state.model2_selectbox if st.session_state.model2_selectbox != 'other' \
+        else st.session_state.model2_other
 
     with col1:
         st.text_area(f'{model1}', f'{response1}', disabled=True, key="response1_out")
@@ -56,6 +64,8 @@ with st.sidebar:
 
 def set_models(api_key=st.session_state.api_key):
     disabled = not bool(api_key)
+    model1_other_disabled = True
+    model2_other_disabled = True
     with st.form(key='my_form'):
         with col1:
             st.selectbox('Select the second LLM model:',
@@ -70,10 +80,16 @@ def set_models(api_key=st.session_state.api_key):
                           'gpt-3.5-turbo@openai',
                           'llama-2-70b-chat@fireworks-ai',
                           'llama-2-13b-chat@fireworks-ai',
-                          'gpt-4-turbo@openai'),
+                          'gpt-4-turbo@openai',
+                          'other'),
                          placeholder='mixtral-8x7b-instruct-v0.1@fireworks-ai',
                          disabled=disabled,
                          key="model1_selectbox")
+            if st.session_state.model1_selectbox == 'other':
+                model1_other_disabled = False
+            st.text_input('Provide model:', placeholder='model@provider',
+                          disabled=model1_other_disabled, key='model1_other')
+
         with col2:
             st.selectbox('Select the second LLM model:',
                          ('mixtral-8x7b-instruct-v0.1@fireworks-ai',
@@ -87,10 +103,15 @@ def set_models(api_key=st.session_state.api_key):
                           'gpt-3.5-turbo@openai',
                           'llama-2-70b-chat@fireworks-ai',
                           'llama-2-13b-chat@fireworks-ai',
-                          'gpt-4-turbo@openai'),
-                         placeholder='mixtral-8x7b-instruct-v0.1@fireworks-ai',
+                          'gpt-4-turbo@openai', 
+                          'other'),
+                         placeholder='llama-2-13b-chat@fireworks-ai',
                          disabled=disabled,
                          key="model2_selectbox")
+            if st.session_state.model2_selectbox == 'other':
+                model2_other_disabled = False
+            st.text_input('Provide model:', placeholder='model@provider',
+                          disabled=model2_other_disabled, key='model2_other')
         st.form_submit_button(label='Initialize', disabled=disabled,
                                             on_click=lambda: form_callback(api_key))
 
